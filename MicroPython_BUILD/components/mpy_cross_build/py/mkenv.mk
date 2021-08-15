@@ -22,6 +22,7 @@ endif
 ifndef BUILD_VERBOSE
 BUILD_VERBOSE = 0
 endif
+
 ifeq ($(BUILD_VERBOSE),0)
 Q = @
 else

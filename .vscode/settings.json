@@ -1,0 +1,18 @@
+{
+    "files.associations": {
+        "sdkconfig.h": "c",
+        "vfs_native.h": "c",
+        "tft.h": "c",
+        "i2c.h": "c",
+        "xtensa_api.h": "c",
+        "periph_ctrl.h": "c",
+        "gpio.h": "c",
+        "axp192.h": "c",
+        "esp_types.h": "c",
+        "freertos.h": "c",
+        "core2_sys_i2c.h": "c",
+        "core2_axp192.h": "c",
+        "core2_i2c.h": "c",
+        "stdint.h": "c"
+    }
+}

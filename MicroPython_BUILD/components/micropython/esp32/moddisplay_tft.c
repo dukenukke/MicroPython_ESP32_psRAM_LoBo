@@ -72,6 +72,7 @@ static const char* const display_types[] = {
     "ST7735R",
     "ST7735B",
     "M5STACK",
+    "M5STACK_CORE2"
     "Unknown",
 };
 
@@ -262,7 +263,9 @@ STATIC mp_obj_t display_tft_init(mp_uint_t n_args, const mp_obj_t *pos_args, mp_
                 (self->dconfig.type == DISP_TYPE_ST7735) ||
                 (self->dconfig.type == DISP_TYPE_ST7735R) ||
                 (self->dconfig.type == DISP_TYPE_ST7735B)) self->dconfig.invrot = 1;
-        else if (self->dconfig.type == DISP_TYPE_M5STACK) self->dconfig.invrot = 3;
+        else if (  (self->dconfig.type == DISP_TYPE_M5STACK ) ||
+                   (self->dconfig.type == DISP_TYPE_M5STACK_CORE2)
+                ) self->dconfig.invrot = 3;
         else self->dconfig.invrot = 0;
     }
 
@@ -285,7 +288,10 @@ STATIC mp_obj_t display_tft_init(mp_uint_t n_args, const mp_obj_t *pos_args, mp_
 
     int orient = args[ARG_rot].u_int;
     if (orient < 0) {
-        if (self->dconfig.type == DISP_TYPE_M5STACK) orient = LANDSCAPE;
+        if (
+            (self->dconfig.type == DISP_TYPE_M5STACK) ||
+            (self->dconfig.type == DISP_TYPE_M5STACK_CORE2)
+        ) orient = LANDSCAPE;
         else orient = PORTRAIT;
     }
     else orient &= 3;
@@ -1396,7 +1402,6 @@ STATIC mp_obj_t display_tft_getCalib(mp_obj_t self_in)
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_1(display_tft_getCalib_obj, display_tft_getCalib);
 
-
 //------------------------------------------------------------------------
 STATIC mp_obj_t display_tft_backlight(mp_obj_t self_in, mp_obj_t onoff_in)
 {
@@ -1634,6 +1639,7 @@ STATIC const mp_rom_map_elem_t display_tft_locals_dict_table[] = {
     { MP_ROM_QSTR(MP_QSTR_ST7735R),             MP_ROM_INT(DISP_TYPE_ST7735R) },
     { MP_ROM_QSTR(MP_QSTR_ST7735B),             MP_ROM_INT(DISP_TYPE_ST7735B) },
     { MP_ROM_QSTR(MP_QSTR_M5STACK),             MP_ROM_INT(DISP_TYPE_M5STACK) },
+    { MP_ROM_QSTR(MP_QSTR_M5STACK_CORE2),       MP_ROM_INT(DISP_TYPE_M5STACK_CORE2) },
     { MP_ROM_QSTR(MP_QSTR_GENERIC),             MP_ROM_INT(DISP_TYPE_GENERIC) },
 
     { MP_ROM_QSTR(MP_QSTR_CENTER),              MP_ROM_INT(CENTER) },

@@ -45,6 +45,9 @@
 #include "esp_attr.h"
 #include "soc/spi_reg.h"
 #include "esp_log.h"
+#if ( CONFIG_MICROPY_HW_BOARD == 3 )
+#include "libs/core2_sys_i2c/core2_axp192.h"
+#endif
 
 
 // ====================================================
@@ -85,7 +88,11 @@ uint8_t spibus_is_init = 0;
 #define GS_FACT_G 0.4870
 #define GS_FACT_B 0.2140
 
+
+
 #ifdef CONFIG_MICROPY_USE_EPD
+
+
 
 static uint16_t xDot = 128;
 static uint16_t yDot = 296;
@@ -991,15 +998,25 @@ void _tft_setRotation(uint8_t rot) {
 
 //---------------------------------------
 void bcklOff(display_config_t *dconfig) {
+	//implement fork by macros: if M5Stack_CORE2...
     if (dconfig->bckl >= 0) {
-		gpio_set_level(dconfig->bckl, (dconfig->bckl_on & 1) ^ 1);
+#if ( CONFIG_MICROPY_HW_BOARD == 3 )
+    core2_axp192_set_lcd_voltage(2800);
+#else
+    gpio_set_level(dconfig->bckl, (dconfig->bckl_on & 1) ^ 1);
+#endif
     }
 }
 
 //--------------------------------------
 void bcklOn(display_config_t *dconfig) {
+	//implement fork by macros: if M5Stack_CORE2...
     if (dconfig->bckl >= 0) {
-		gpio_set_level(dconfig->bckl, dconfig->bckl_on & 1);
+#if ( CONFIG_MICROPY_HW_BOARD == 3 )
+    core2_axp192_set_lcd_voltage(0);
+#else 
+    gpio_set_level(dconfig->bckl, dconfig->bckl_on & 1);
+#endif
     }
 }
 
@@ -1229,7 +1246,7 @@ esp_err_t TFT_display_init(display_config_t *dconfig)
     disp_select();
 
     //Send all the initialization commands
-    if ((tft_disp_type == DISP_TYPE_ILI9341) || (tft_disp_type == DISP_TYPE_M5STACK)) {
+    if ((tft_disp_type == DISP_TYPE_ILI9341) || (tft_disp_type == DISP_TYPE_M5STACK) || (tft_disp_type == DISP_TYPE_M5STACK_CORE2)) {
         if (dconfig->rst < 0) {
             vTaskDelay(50 / portTICK_RATE_MS);
         }

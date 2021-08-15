@@ -18,7 +18,9 @@ tft = display.TFT()
 #tft.init(tft.ILI9341, width=240, height=320, miso=19, mosi=18, clk=5, cs=15, dc=33, bgr=True, hastouch=tft.TOUCH_STMPE, tcs=32)
 
 # M5Stack:
-tft.init(tft.M5STACK, width=240, height=320, rst_pin=33, backl_pin=32, miso=19, mosi=23, clk=18, cs=14, dc=27, bgr=True, backl_on=1)
+#tft.init(tft.M5STACK, width=240, height=320, rst_pin=33, backl_pin=32, miso=19, mosi=23, clk=18, cs=14, dc=27, bgr=True, backl_on=1)
+# M5Stack Core2
+tft.init(tft.M5STACK_CORE2, width=240, height=320, miso=38, mosi=23, clk=18, cs=5, dc=15, bgr=True, backl_on=1)
 
 # Some others...
 #tft.init(tft.ILI9341, width=240, height=320, miso=19,mosi=23,clk=18,cs=5,dc=26,tcs=27,hastouch=True, bgr=True)

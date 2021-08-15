@@ -91,15 +91,16 @@ typedef struct __attribute__((__packed__)) {
 #define PORTRAIT_FLIP	2
 #define LANDSCAPE_FLIP	3
 
-#define DISP_TYPE_ILI9341	0
-#define DISP_TYPE_ILI9488	1
-#define DISP_TYPE_ST7789V	2
-#define DISP_TYPE_ST7735	3
-#define DISP_TYPE_ST7735R	4
-#define DISP_TYPE_ST7735B	5
-#define DISP_TYPE_M5STACK	6
-#define DISP_TYPE_GENERIC	7
-#define DISP_TYPE_MAX		8
+#define DISP_TYPE_ILI9341	      0
+#define DISP_TYPE_ILI9488	      1
+#define DISP_TYPE_ST7789V	      2
+#define DISP_TYPE_ST7735	      3
+#define DISP_TYPE_ST7735R	      4
+#define DISP_TYPE_ST7735B	      5
+#define DISP_TYPE_M5STACK	      6
+#define DISP_TYPE_M5STACK_CORE2	7
+#define DISP_TYPE_GENERIC	      8
+#define DISP_TYPE_MAX		        9
 
 #define DEFAULT_TFT_DISPLAY_WIDTH  240
 #define DEFAULT_TFT_DISPLAY_HEIGHT 320
