@@ -13,6 +13,8 @@
         "core2_sys_i2c.h": "c",
         "core2_axp192.h": "c",
         "core2_i2c.h": "c",
-        "stdint.h": "c"
+        "stdint.h": "c",
+        "stdbool.h": "c",
+        "ft6336.h": "c"
     }
 }

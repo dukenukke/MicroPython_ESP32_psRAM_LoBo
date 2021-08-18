@@ -281,7 +281,8 @@ endif
 ifeq ($(CONFIG_MICROPY_HW_BOARD),3)
 LIBS_SRC_C += \
 	esp32/libs/core2_sys_i2c/core2_i2c.c \
-	esp32/libs/core2_sys_i2c/core2_axp192.c
+	esp32/libs/core2_sys_i2c/core2_axp192.c \
+	esp32/libs/core2_sys_i2c/ft636.c
 endif
 
 ifdef CONFIG_MICROPY_USE_EVE

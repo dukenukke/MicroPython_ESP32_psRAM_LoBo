@@ -1233,12 +1233,18 @@ esp_err_t TFT_display_init(display_config_t *dconfig)
 
     if (dconfig->rst >= 0) {
         //Reset the display
-        gpio_set_level(dconfig->rst, 0);
+#if ( CONFIG_MICROPY_HW_BOARD == 3 )
+        core2_axp192_set_lcd_reset(0);
+		vTaskDelay(20 / portTICK_RATE_MS);
+		core2_axp192_set_lcd_reset(1);
+		vTaskDelay(150 / portTICK_RATE_MS);
+#else
+		gpio_set_level(dconfig->rst, 0);
         vTaskDelay(20 / portTICK_RATE_MS);
         gpio_set_level(dconfig->rst, 1);
         vTaskDelay(150 / portTICK_RATE_MS);
-    }
-    else {
+#endif
+    } else {
         disp_spi_transfer_cmd_data(TFT_CMD_SWRESET, NULL, 0);
         vTaskDelay(200 / portTICK_RATE_MS);
     }
@@ -1297,7 +1303,11 @@ esp_err_t TFT_display_init(display_config_t *dconfig)
 
     ///Enable backlight
     if (dconfig->bckl >= 0) {
+#if ( CONFIG_MICROPY_HW_BOARD == 3 )
+        core2_axp192_set_lcd_backlight(12);
+#else
         gpio_set_level(dconfig->bckl, dconfig->bckl_on);
+#endif
     }
     return ESP_OK;
 }

@@ -50,8 +50,16 @@
 #include "esp_heap_caps.h"
 #include "tftspi.h"
 
-#if CONFIG_MICROPY_USE_EVE
-#include "eve/FT8.h"
+
+
+#if CONFIG_MICROPY_HW_BOARD == 3
+#include "ft6336.h"
+#else
+
+    #if CONFIG_MICROPY_USE_EVE
+        #include "eve/FT8.h"
+    #endif
+
 #endif
 
 #include "py/mpprint.h"
@@ -3186,6 +3194,16 @@ int TFT_read_touch(int *x, int* y, uint8_t raw)
     int result = -1;
     int X=0, Y=0;
 
+#if CONFIG_MICROPY_HW_BOARD==3
+	//M5Stack Core2 touchscreen
+	if(tft_touch_type == TOUCH_TYPE_FT6336){
+		uint16_t Xx, Yy, Z=0;
+        result = ft6336_get_touch(&Xx, &Yy, &Z);
+		if (result == 0) return 0;
+		X = Xx;
+		Y = Yy;
+	}
+#else
     if (tft_touch_type == TOUCH_TYPE_XPT2046) {
     	if (tp_calx == 0) {
     		// Set default calibration constants
@@ -3207,6 +3225,7 @@ int TFT_read_touch(int *x, int* y, uint8_t raw)
 		X = Xx;
 		Y = Yy;
     }
+#endif
     else return 0;
 
     if (raw) {

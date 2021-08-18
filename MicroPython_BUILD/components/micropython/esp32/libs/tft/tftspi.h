@@ -75,15 +75,19 @@ typedef struct __attribute__((__packed__)) {
 #define DISP_COLOR_BITS_16	0x55
 #define DISP_COLOR_BITS		DISP_COLOR_BITS_16
 
-#define TOUCH_TYPE_NONE		0
+#define TOUCH_TYPE_NONE		  0
 #define TOUCH_TYPE_XPT2046	1
 #define TOUCH_TYPE_STMPE610	2
+#define TOUCH_TYPE_FT6336	  3
 
-#define TP_CALX_XPT2046		7472920
-#define TP_CALY_XPT2046		122224794
+#define TP_CALX_XPT2046		      7472920
+#define TP_CALY_XPT2046		      122224794
 
-#define TP_CALX_STMPE610	21368532
-#define TP_CALY_STMPE610	11800144
+#define TP_CALX_STMPE610	      21368532
+#define TP_CALY_STMPE610	      11800144
+
+#define TP_CALX_FT6336	        0
+#define TP_CALY_FT6336	        0
 
 // === Screen orientation constants ===
 #define PORTRAIT	0

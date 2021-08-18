@@ -1696,6 +1696,7 @@ STATIC const mp_rom_map_elem_t display_tft_locals_dict_table[] = {
     { MP_ROM_QSTR(MP_QSTR_TOUCH_NONE),          MP_ROM_INT(TOUCH_TYPE_NONE) },
     { MP_ROM_QSTR(MP_QSTR_TOUCH_XPT),           MP_ROM_INT(TOUCH_TYPE_XPT2046) },
     { MP_ROM_QSTR(MP_QSTR_TOUCH_STMPE),         MP_ROM_INT(TOUCH_TYPE_STMPE610) },
+    { MP_ROM_QSTR(MP_QSTR_TOUCH_FT6336),        MP_ROM_INT(TOUCH_TYPE_FT6336) },
 };
 STATIC MP_DEFINE_CONST_DICT(display_tft_locals_dict, display_tft_locals_dict_table);
 
