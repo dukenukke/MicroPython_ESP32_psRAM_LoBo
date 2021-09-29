@@ -75,15 +75,19 @@ typedef struct __attribute__((__packed__)) {
 #define DISP_COLOR_BITS_16	0x55
 #define DISP_COLOR_BITS		DISP_COLOR_BITS_16
 
-#define TOUCH_TYPE_NONE		0
+#define TOUCH_TYPE_NONE		  0
 #define TOUCH_TYPE_XPT2046	1
 #define TOUCH_TYPE_STMPE610	2
+#define TOUCH_TYPE_FT6336	  3
 
-#define TP_CALX_XPT2046		7472920
-#define TP_CALY_XPT2046		122224794
+#define TP_CALX_XPT2046		      7472920
+#define TP_CALY_XPT2046		      122224794
 
-#define TP_CALX_STMPE610	21368532
-#define TP_CALY_STMPE610	11800144
+#define TP_CALX_STMPE610	      21368532
+#define TP_CALY_STMPE610	      11800144
+
+#define TP_CALX_FT6336	        0
+#define TP_CALY_FT6336	        0
 
 // === Screen orientation constants ===
 #define PORTRAIT	0
@@ -91,19 +95,26 @@ typedef struct __attribute__((__packed__)) {
 #define PORTRAIT_FLIP	2
 #define LANDSCAPE_FLIP	3
 
-#define DISP_TYPE_ILI9341	0
-#define DISP_TYPE_ILI9488	1
-#define DISP_TYPE_ST7789V	2
-#define DISP_TYPE_ST7735	3
-#define DISP_TYPE_ST7735R	4
-#define DISP_TYPE_ST7735B	5
-#define DISP_TYPE_M5STACK	6
-#define DISP_TYPE_GENERIC	7
-#define DISP_TYPE_MAX		8
+#define DISP_TYPE_ILI9341	      0
+#define DISP_TYPE_ILI9488	      1
+#define DISP_TYPE_ST7789V	      2
+#define DISP_TYPE_ST7735	      3
+#define DISP_TYPE_ST7735R	      4
+#define DISP_TYPE_ST7735B	      5
+#define DISP_TYPE_M5STACK	      6
+#define DISP_TYPE_M5STACK_CORE2	7
+#define DISP_TYPE_GENERIC	      8
+#define DISP_TYPE_MAX		        9
 
-#define DEFAULT_TFT_DISPLAY_WIDTH  240
-#define DEFAULT_TFT_DISPLAY_HEIGHT 320
-#define DEFAULT_DISP_TYPE   DISP_TYPE_ILI9341
+#if CONFIG_MICROPY_HW_BOARD == 3
+    #define DEFAULT_TFT_DISPLAY_WIDTH  320
+    #define DEFAULT_TFT_DISPLAY_HEIGHT 240
+    #define DEFAULT_DISP_TYPE   DISP_TYPE_M5STACK_CORE2
+#else
+    #define DEFAULT_TFT_DISPLAY_WIDTH  240
+    #define DEFAULT_TFT_DISPLAY_HEIGHT 320
+    #define DEFAULT_DISP_TYPE   DISP_TYPE_ILI9341
+#endif
 
 /*
 #define WROVER_V3_CONFIG() {\

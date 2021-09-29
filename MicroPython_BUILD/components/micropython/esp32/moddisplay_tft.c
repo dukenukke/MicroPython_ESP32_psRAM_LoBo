@@ -48,6 +48,10 @@
 #include "machine_hw_spi.h"
 #include "modmachine.h"
 
+#if CONFIG_MICROPY_HW_BOARD == 3
+#include "libs/core2_sys_i2c/core2_i2c.h"
+#endif
+
 extern uint8_t disp_used_spi_host;
 
 typedef struct _display_tft_obj_t {
@@ -72,6 +76,7 @@ static const char* const display_types[] = {
     "ST7735R",
     "ST7735B",
     "M5STACK",
+    "M5STACK_CORE2"
     "Unknown",
 };
 
@@ -89,14 +94,17 @@ STATIC mp_obj_t display_tft_make_new(const mp_obj_type_t *type, size_t n_args, s
     display_tft_obj_t *self = m_new_obj(display_tft_obj_t);
     self->base.type = &display_tft_type;
     self->spi = NULL;
+
     self->disp_spi_dev.handle = NULL;
     self->disp_spi_dev.cs = -1;
     self->disp_spi_dev.dc = -1;
     self->disp_spi_dev.selected = 0;
+
     self->ts_spi_dev.handle = NULL;
     self->ts_spi_dev.cs = -1;
     self->ts_spi_dev.dc = -1;
     self->ts_spi_dev.selected = 0;
+    
     self->disp_spi = &self->disp_spi_dev;
     self->ts_spi = &self->ts_spi_dev;
 
@@ -234,7 +242,16 @@ STATIC mp_obj_t display_tft_init(mp_uint_t n_args, const mp_obj_t *pos_args, mp_
 
     self->dconfig.type = args[ARG_type].u_int;
 
-    if ((args[ARG_hastouch].u_int == TOUCH_TYPE_XPT2046) || (args[ARG_hastouch].u_int == TOUCH_TYPE_STMPE610)) {
+#if ( CONFIG_MICROPY_HW_BOARD == 3 )
+
+if (args[ARG_hastouch].u_int == TOUCH_TYPE_FT6336 ) {
+    self->dconfig.touch = args[ARG_hastouch].u_int;
+    self->tp_calx = 0;
+    self->tp_caly = 0;
+} else self->dconfig.touch = TOUCH_TYPE_NONE;
+
+#else
+    if ((args[ARG_hastouch].u_int == TOUCH_TYPE_XPT2046) || (args[ARG_hastouch].u_int == TOUCH_TYPE_STMPE610) || (args[ARG_hastouch].u_int == TOUCH_TYPE_FT6336 )) {
         if (args[ARG_tcs].u_int < 0) {
             mp_raise_ValueError("Touch selected but no touch cs given");
         }
@@ -250,6 +267,7 @@ STATIC mp_obj_t display_tft_init(mp_uint_t n_args, const mp_obj_t *pos_args, mp_
         self->dconfig.tcs = args[ARG_tcs].u_int;
     }
     else self->dconfig.touch = TOUCH_TYPE_NONE;
+#endif
 
     self->dconfig.host = args[ARG_host].u_int;
     self->dconfig.gamma = 0;
@@ -262,7 +280,9 @@ STATIC mp_obj_t display_tft_init(mp_uint_t n_args, const mp_obj_t *pos_args, mp_
                 (self->dconfig.type == DISP_TYPE_ST7735) ||
                 (self->dconfig.type == DISP_TYPE_ST7735R) ||
                 (self->dconfig.type == DISP_TYPE_ST7735B)) self->dconfig.invrot = 1;
-        else if (self->dconfig.type == DISP_TYPE_M5STACK) self->dconfig.invrot = 3;
+        else if (  (self->dconfig.type == DISP_TYPE_M5STACK ) ||
+                   (self->dconfig.type == DISP_TYPE_M5STACK_CORE2)
+                ) self->dconfig.invrot = 3;
         else self->dconfig.invrot = 0;
     }
 
@@ -285,7 +305,10 @@ STATIC mp_obj_t display_tft_init(mp_uint_t n_args, const mp_obj_t *pos_args, mp_
 
     int orient = args[ARG_rot].u_int;
     if (orient < 0) {
-        if (self->dconfig.type == DISP_TYPE_M5STACK) orient = LANDSCAPE;
+        if (
+            (self->dconfig.type == DISP_TYPE_M5STACK) ||
+            (self->dconfig.type == DISP_TYPE_M5STACK_CORE2)
+        ) orient = LANDSCAPE;
         else orient = PORTRAIT;
     }
     else orient &= 3;
@@ -1114,10 +1137,15 @@ STATIC mp_obj_t display_tft_getTouch(size_t n_args, const mp_obj_t *pos_args, mp
     display_tft_obj_t *self = MP_OBJ_TO_PTR(pos_args[0]);
 
     if (setupDevice(self)) return mp_const_none;
+#if ( CONFIG_MICROPY_HW_BOARD == 3)
+    if (! is_core2_sys_i2c_init()){ 
+		nlr_raise(mp_obj_new_exception_msg(&mp_type_OSError, "Touch interface I2C not configured"));
+	}
+#else
     if (self->ts_spi->handle == NULL) {
         nlr_raise(mp_obj_new_exception_msg(&mp_type_OSError, "Touch not configured"));
     }
-
+#endif
     mp_arg_val_t args[MP_ARRAY_SIZE(allowed_args)];
     mp_arg_parse_all(n_args - 1, pos_args + 1, kw_args, MP_ARRAY_SIZE(allowed_args), allowed_args, args);
 
@@ -1334,9 +1362,15 @@ STATIC mp_obj_t display_tft_setCalib(size_t n_args, const mp_obj_t *pos_args, mp
     };
     display_tft_obj_t *self = MP_OBJ_TO_PTR(pos_args[0]);
     if (setupDevice(self)) return mp_const_none;
+#if ( CONFIG_MICROPY_HW_BOARD == 3 )
+    if (! is_core2_sys_i2c_init()){ 
+		nlr_raise(mp_obj_new_exception_msg(&mp_type_OSError, "Touch interface I2C not configured"));
+	}
+#else
     if (self->ts_spi->handle == NULL) {
         nlr_raise(mp_obj_new_exception_msg(&mp_type_OSError, "Touch not configured"));
     }
+#endif
 
     mp_arg_val_t args[MP_ARRAY_SIZE(allowed_args)];
     mp_arg_parse_all(n_args - 1, pos_args + 1, kw_args, MP_ARRAY_SIZE(allowed_args), allowed_args, args);
@@ -1384,9 +1418,15 @@ STATIC mp_obj_t display_tft_getCalib(mp_obj_t self_in)
 {
     display_tft_obj_t *self = self_in;
     if (setupDevice(self)) return mp_const_none;
+#if ( CONFIG_MICROPY_HW_BOARD == 3 )
+    if (! is_core2_sys_i2c_init()){ 
+		nlr_raise(mp_obj_new_exception_msg(&mp_type_OSError, "Touch interface I2C not configured"));
+	}
+#else
     if (self->ts_spi->handle == NULL) {
         nlr_raise(mp_obj_new_exception_msg(&mp_type_OSError, "Touch not configured"));
     }
+#endif
     mp_obj_t tuple[2];
 
     tuple[0] = mp_obj_new_int(self->tp_calx);
@@ -1395,7 +1435,6 @@ STATIC mp_obj_t display_tft_getCalib(mp_obj_t self_in)
     return mp_obj_new_tuple(2, tuple);
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_1(display_tft_getCalib_obj, display_tft_getCalib);
-
 
 //------------------------------------------------------------------------
 STATIC mp_obj_t display_tft_backlight(mp_obj_t self_in, mp_obj_t onoff_in)
@@ -1634,6 +1673,7 @@ STATIC const mp_rom_map_elem_t display_tft_locals_dict_table[] = {
     { MP_ROM_QSTR(MP_QSTR_ST7735R),             MP_ROM_INT(DISP_TYPE_ST7735R) },
     { MP_ROM_QSTR(MP_QSTR_ST7735B),             MP_ROM_INT(DISP_TYPE_ST7735B) },
     { MP_ROM_QSTR(MP_QSTR_M5STACK),             MP_ROM_INT(DISP_TYPE_M5STACK) },
+    { MP_ROM_QSTR(MP_QSTR_M5STACK_CORE2),       MP_ROM_INT(DISP_TYPE_M5STACK_CORE2) },
     { MP_ROM_QSTR(MP_QSTR_GENERIC),             MP_ROM_INT(DISP_TYPE_GENERIC) },
 
     { MP_ROM_QSTR(MP_QSTR_CENTER),              MP_ROM_INT(CENTER) },
@@ -1690,6 +1730,7 @@ STATIC const mp_rom_map_elem_t display_tft_locals_dict_table[] = {
     { MP_ROM_QSTR(MP_QSTR_TOUCH_NONE),          MP_ROM_INT(TOUCH_TYPE_NONE) },
     { MP_ROM_QSTR(MP_QSTR_TOUCH_XPT),           MP_ROM_INT(TOUCH_TYPE_XPT2046) },
     { MP_ROM_QSTR(MP_QSTR_TOUCH_STMPE),         MP_ROM_INT(TOUCH_TYPE_STMPE610) },
+    { MP_ROM_QSTR(MP_QSTR_TOUCH_FT6336),        MP_ROM_INT(TOUCH_TYPE_FT6336) },
 };
 STATIC MP_DEFINE_CONST_DICT(display_tft_locals_dict, display_tft_locals_dict_table);
 

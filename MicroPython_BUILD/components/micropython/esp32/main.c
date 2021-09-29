@@ -61,6 +61,11 @@
 #include "libs/ftp.h"
 #endif
 
+#if CONFIG_MICROPY_HW_BOARD == 3
+#include "libs/core2_sys_i2c/core2_i2c.h"
+#include "libs/core2_sys_i2c/core2_axp192.h"
+#endif
+
 #include "driver/uart.h"
 #include "rom/uart.h"
 #include "sdkconfig.h"
@@ -105,6 +110,7 @@ void mp_task(void *pvParameter)
 	#endif
 
     uart_init();
+	
 
 	#if (CONFIG_BOOT_SET_LED >= 0) && defined(CONFIG_BOOT_RESET_LED)
 	// Deactivate boot led
@@ -116,6 +122,11 @@ void mp_task(void *pvParameter)
     mpsleep_init0();
 
     rtc_init0();
+
+	#if ( CONFIG_MICROPY_HW_BOARD == 3 )
+        core2_sys_i2c_init();
+		core2_axp192_init(); //configure Power circuit (SD card + TFT backlight) and touchscreen
+	#endif
 
     // === Main MicroPython thread init ===
     mp_thread_preinit(mp_task_stack, mp_task_stack_len);

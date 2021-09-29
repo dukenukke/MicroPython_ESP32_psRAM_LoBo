@@ -45,6 +45,11 @@
 #include "esp_attr.h"
 #include "soc/spi_reg.h"
 #include "esp_log.h"
+#if ( CONFIG_MICROPY_HW_BOARD == 3 )
+#include "libs/core2_sys_i2c/core2_axp192.h"
+#include "libs/core2_sys_i2c/core2_i2c.h"
+#include "libs/core2_sys_i2c/ft6336.h"
+#endif
 
 
 // ====================================================
@@ -59,18 +64,31 @@ uint32_t max_rdclock = 4000000;
 int _width = DEFAULT_TFT_DISPLAY_WIDTH;
 int _height = DEFAULT_TFT_DISPLAY_HEIGHT;
 
-// Display type, DISP_TYPE_ILI9488 or DISP_TYPE_ILI9341
-uint8_t tft_disp_type = DEFAULT_DISP_TYPE;
-uint8_t tft_touch_type = TOUCH_TYPE_NONE;
+#if CONFIG_MICROPY_HW_BOARD == 3
 
+uint8_t tft_disp_type = DISP_TYPE_M5STACK_CORE2;
+
+uint8_t tft_touch_type = TOUCH_TYPE_FT6336;
+
+#elif (CONFIG_MICROPY_HW_BOARD == 2)
+uint8_t tft_disp_type = DISP_TYPE_M5STACK;
+uint8_t tft_touch_type = TOUCH_TYPE_NONE;
+#else
+// Display type, DISP_TYPE_ILI9488 or DISP_TYPE_ILI9341
+
+uint8_t tft_disp_type = DEFAULT_DISP_TYPE;
+
+uint8_t tft_touch_type = TOUCH_TYPE_NONE;
+#endif
 // Spi device handles for display and touch screen
 exspi_device_handle_t *disp_spi = NULL;
-exspi_device_handle_t *ts_spi = NULL;
 
-uint8_t bits_per_color = 16;
-uint8_t TFT_RGB_BGR = 0;
-uint8_t gamma_curve = 0;
-uint32_t spi_speed = 10000000;
+exspi_device_handle_t *ts_spi   = NULL;
+
+uint8_t bits_per_color          = 16;
+uint8_t TFT_RGB_BGR             = 0;
+uint8_t gamma_curve             = 0;
+uint32_t spi_speed              = 10000000; //10MHz
 // ====================================================
 
 static color_t *trans_cline = NULL;
@@ -585,14 +603,6 @@ color_t readPixel(int16_t x, int16_t y)
 //==============================
 int touch_get_data(uint8_t type)
 {
-	/*
-	while (ts_spi->handle->host->hw->cmd.usr); // Wait for SPI bus ready
-
-    ts_spi->handle->host->hw->data_buf[0] = type;
-    _spi_transfer_start(ts_spi, 24, 24);
-    uint16_t res = (uint16_t)(ts_spi->handle->host->hw->data_buf[0] >> 8);
-	while (ts_spi->handle->host->hw->cmd.usr); // Wait for SPI bus ready
-	*/
 	spi_transaction_t t;
     memset(&t, 0, sizeof(t));  //Zero out the transaction
 
@@ -661,30 +671,6 @@ uint32_t stmpe610_getID()
 //==================
 void stmpe610_Init()
 {
-	/*
-    stmpe610_write_reg(STMPE610_REG_SYS_CTRL1, 0x02);        // Software chip reset
-    vTaskDelay(10 / portTICK_RATE_MS);
-
-    stmpe610_write_reg(STMPE610_REG_SYS_CTRL2, 0x04);        // Temperature sensor clock off, GPIO clock off, touch clock on, ADC clock on
-
-    stmpe610_write_reg(STMPE610_REG_INT_EN, 0x00);           // Don't Interrupt on INT pin
-
-    stmpe610_write_reg(STMPE610_REG_ADC_CTRL1, 0x48);        // ADC conversion time = 80 clock ticks, 12-bit ADC, internal voltage reference
-    vTaskDelay(2 / portTICK_RATE_MS);
-    stmpe610_write_reg(STMPE610_REG_ADC_CTRL2, 0x01);        // ADC speed 3.25MHz
-    stmpe610_write_reg(STMPE610_REG_GPIO_AF, 0x00);          // GPIO alternate function - OFF
-    stmpe610_write_reg(STMPE610_REG_TSC_CFG, 0xE3);          // Averaging 8, touch detect delay 1ms, panel driver settling time 1ms
-    stmpe610_write_reg(STMPE610_REG_FIFO_TH, 0x01);          // FIFO threshold = 1
-    stmpe610_write_reg(STMPE610_REG_FIFO_STA, 0x01);         // FIFO reset enable
-    stmpe610_write_reg(STMPE610_REG_FIFO_STA, 0x00);         // FIFO reset disable
-    stmpe610_write_reg(STMPE610_REG_TSC_FRACT_XYZ, 0x07);    // Z axis data format
-    stmpe610_write_reg(STMPE610_REG_TSC_I_DRIVE, 0x01);      // max 50mA touchscreen line current
-    stmpe610_write_reg(STMPE610_REG_TSC_CTRL, 0x30);         // X&Y&Z, 16 reading window
-    stmpe610_write_reg(STMPE610_REG_TSC_CTRL, 0x31);         // X&Y&Z, 16 reading window, TSC enable
-    stmpe610_write_reg(STMPE610_REG_INT_STA, 0xFF);          // Clear all interrupts
-    stmpe610_write_reg(STMPE610_REG_INT_CTRL, 0x00);         // Level interrupt, disable interrupts
-    */
-
 	stmpe610_write_reg(STMPE610_REG_SYS_CTRL1, 0x02);        // Software chip reset
     vTaskDelay(10 / portTICK_RATE_MS);
     stmpe610_write_reg(STMPE610_REG_SYS_CTRL2, 0x0);													// turn on clocks!
@@ -726,42 +712,6 @@ static void stmpe_readData(uint32_t *x, uint32_t *y, uint32_t *z)
 //===========================================================
 int stmpe610_get_touch(uint16_t *x, uint16_t *y, uint16_t *z)
 {
-	/*
-    if (!(stmpe610_read_byte(STMPE610_REG_TSC_CTRL) & 0x80)) return 0;
-
-    int n = 0;
-    // Get touch data
-    uint8_t fifo_size = stmpe610_read_byte(STMPE610_REG_FIFO_SIZE);
-    while (fifo_size < 2) {
-    	if (!(stmpe610_read_byte(STMPE610_REG_TSC_CTRL) & 0x80)) return 0;
-        fifo_size = stmpe610_read_byte(STMPE610_REG_FIFO_SIZE);
-        n++;
-        if (n > 1000) return 0;
-    }
-    n = 0;
-    while (fifo_size > 120) {
-    	if (!(stmpe610_read_byte(STMPE610_REG_TSC_CTRL) & 0x80)) return 0;
-        *x = stmpe610_read_word(STMPE610_REG_TSC_DATA_X);
-        *y = stmpe610_read_word(STMPE610_REG_TSC_DATA_Y);
-        *z = stmpe610_read_byte(STMPE610_REG_TSC_DATA_Z);
-        fifo_size = stmpe610_read_byte(STMPE610_REG_FIFO_SIZE);
-        n++;
-        if (n > 1000) return 0;
-    }
-    for (uint8_t i=0; i < (fifo_size-1); i++) {
-        *x = stmpe610_read_word(STMPE610_REG_TSC_DATA_X);
-        *y = stmpe610_read_word(STMPE610_REG_TSC_DATA_Y);
-        *z = stmpe610_read_byte(STMPE610_REG_TSC_DATA_Z);
-    }
-
-    *x = 4096 - *x;
-    // Clear the rest of the fifo
-    //{
-    //    stmpe610_write_reg(STMPE610_REG_FIFO_STA, 0x01);		// FIFO reset enable
-    //    stmpe610_write_reg(STMPE610_REG_FIFO_STA, 0x00);		// FIFO reset disable
-    //}
-    */
-
 	*x = 0;
 	*y = 0;
 	*z = 0;
@@ -991,15 +941,25 @@ void _tft_setRotation(uint8_t rot) {
 
 //---------------------------------------
 void bcklOff(display_config_t *dconfig) {
+	//implement fork by macros: if M5Stack_CORE2...
     if (dconfig->bckl >= 0) {
-		gpio_set_level(dconfig->bckl, (dconfig->bckl_on & 1) ^ 1);
+#if ( CONFIG_MICROPY_HW_BOARD == 3 )
+    core2_axp192_set_lcd_voltage(2800);
+#else
+    gpio_set_level(dconfig->bckl, (dconfig->bckl_on & 1) ^ 1);
+#endif
     }
 }
 
 //--------------------------------------
 void bcklOn(display_config_t *dconfig) {
+	//implement fork by macros: if M5Stack_CORE2...
     if (dconfig->bckl >= 0) {
-		gpio_set_level(dconfig->bckl, dconfig->bckl_on & 1);
+#if ( CONFIG_MICROPY_HW_BOARD == 3 )
+    core2_axp192_set_lcd_voltage(0);
+#else 
+    gpio_set_level(dconfig->bckl, dconfig->bckl_on & 1);
+#endif
     }
 }
 
@@ -1148,6 +1108,28 @@ static esp_err_t TFT_spiInit(display_config_t *dconfig)
     ESP_LOGI(TAG, "attached display device, speed=%u", spi_get_speed(disp_spi));
     ESP_LOGI(TAG, "bus uses native pins: %s", spi_uses_native_pins(disp_spi->handle) ? "true" : "false");
 
+#if ( CONFIG_MICROPY_HW_BOARD == 3 )
+    if (dconfig->touch != TOUCH_TYPE_NONE) {
+		if(is_core2_sys_i2c_init()){
+			printf("[TS] I2C BUS inited for touch screen device\n");
+			ESP_LOGD(TAG, "I2C BUS inited for touch screen device");
+			if (dconfig->touch == TOUCH_TYPE_FT6336) {
+			    if(ESP_OK == ft6336_init()){
+					ESP_LOGD(TAG, "Touch device FT6336 inited on I2C bus");
+			    } else {
+                    ESP_LOGE(TAG, "Error initializing touch screen device");
+			    }
+			} else {
+				ESP_LOGE(TAG, "Wrong touch screen device selected");
+			}
+		} else {
+			ESP_LOGE(TAG, "I2C BUS for touch screen device NOT inited");
+		}
+	} else {
+		printf("[TS] No touch device selected\n");
+		ESP_LOGD(TAG, "No touch device selected");
+	}
+#else
 	if (dconfig->touch != TOUCH_TYPE_NONE) {
 		// =====================================================
 	    // ==== Attach the touch screen to the same SPI bus ====
@@ -1180,6 +1162,7 @@ static esp_err_t TFT_spiInit(display_config_t *dconfig)
 	        dconfig->touch = TOUCH_TYPE_NONE;
 	    }
 	}
+#endif
 	return ESP_OK;
 }
 
@@ -1216,12 +1199,18 @@ esp_err_t TFT_display_init(display_config_t *dconfig)
 
     if (dconfig->rst >= 0) {
         //Reset the display
-        gpio_set_level(dconfig->rst, 0);
+#if ( CONFIG_MICROPY_HW_BOARD == 3 )
+        core2_axp192_set_lcd_reset(0);
+		vTaskDelay(20 / portTICK_RATE_MS);
+		core2_axp192_set_lcd_reset(1);
+		vTaskDelay(150 / portTICK_RATE_MS);
+#else
+		gpio_set_level(dconfig->rst, 0);
         vTaskDelay(20 / portTICK_RATE_MS);
         gpio_set_level(dconfig->rst, 1);
         vTaskDelay(150 / portTICK_RATE_MS);
-    }
-    else {
+#endif
+    } else {
         disp_spi_transfer_cmd_data(TFT_CMD_SWRESET, NULL, 0);
         vTaskDelay(200 / portTICK_RATE_MS);
     }
@@ -1229,7 +1218,7 @@ esp_err_t TFT_display_init(display_config_t *dconfig)
     disp_select();
 
     //Send all the initialization commands
-    if ((tft_disp_type == DISP_TYPE_ILI9341) || (tft_disp_type == DISP_TYPE_M5STACK)) {
+    if ((tft_disp_type == DISP_TYPE_ILI9341) || (tft_disp_type == DISP_TYPE_M5STACK) || (tft_disp_type == DISP_TYPE_M5STACK_CORE2)) {
         if (dconfig->rst < 0) {
             vTaskDelay(50 / portTICK_RATE_MS);
         }
@@ -1280,7 +1269,11 @@ esp_err_t TFT_display_init(display_config_t *dconfig)
 
     ///Enable backlight
     if (dconfig->bckl >= 0) {
+#if ( CONFIG_MICROPY_HW_BOARD == 3 )
+        core2_axp192_set_lcd_backlight(12);
+#else
         gpio_set_level(dconfig->bckl, dconfig->bckl_on);
+#endif
     }
     return ESP_OK;
 }

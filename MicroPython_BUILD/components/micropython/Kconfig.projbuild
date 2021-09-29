@@ -1,4 +1,29 @@
 menu "MicroPython"
+
+    config MICROPY_HW_BOARD
+        int
+        default 0 if MICROPY_HW_BOARD0
+        default 1 if MICROPY_HW_BOARD1
+        default 2 if MICROPY_HW_BOARD2
+        default 3 if MICROPY_HW_BOARD3
+
+        choice
+            prompt "Select board type"
+            default MICROPY_HW_BOARD0
+            help
+                Select board type
+
+            config MICROPY_HW_BOARD0
+                bool "ESP32 custom board"
+            config MICROPY_HW_BOARD1
+                bool "M5Stack Basic Core"
+            config MICROPY_HW_BOARD2
+                bool "M5Stack Fire"
+            config MICROPY_HW_BOARD3
+                bool "M5Stack Core2"
+        endchoice
+
+
     config MICROPY_HW_BOARD_NAME
         string "Board name"
         default "ESP32 board"
