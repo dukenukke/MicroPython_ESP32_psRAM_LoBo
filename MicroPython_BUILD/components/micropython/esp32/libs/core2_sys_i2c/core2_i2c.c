@@ -22,6 +22,7 @@ CORE2_SYS_I2C core2_sys_i2c = {
  ********************************************************** */
 esp_err_t core2_sys_i2c_init(void){
     i2c_config_t conf;
+    esp_err_t rc;
     conf.mode = I2C_MODE_MASTER;
     conf.sda_io_num = CORE2_SYS_I2C_SDA;
     conf.scl_io_num = CORE2_SYS_I2C_SCL;
@@ -29,8 +30,19 @@ esp_err_t core2_sys_i2c_init(void){
     conf.scl_pullup_en = GPIO_PULLUP_ENABLE;
     conf.master.clk_speed = CORE2_SYS_I2C_SPEED;
     i2c_param_config(CORE2_SYS_I2C_BUS_ID, &conf);
-    return i2c_driver_install(CORE2_SYS_I2C_BUS_ID, I2C_MODE_MASTER, 0, 0, false, ESP_INTR_FLAG_IRAM);
+    rc = i2c_driver_install(CORE2_SYS_I2C_BUS_ID, I2C_MODE_MASTER, 0, 0, false, ESP_INTR_FLAG_IRAM);
+    core2_sys_i2c.is_init = (rc==ESP_OK) ? true : false;
+    printf("[TS] Touch screen I2C interface init status: %s", core2_sys_i2c.is_init ? "TRUE" : "FALSE" );
+    return rc;
 }
+
+/** **********************************************************
+ * 
+ ********************************************************** */
+bool is_core2_sys_i2c_init(void) {
+    return core2_sys_i2c.is_init;
+}
+
 /** **********************************************************
  * 
  ********************************************************** */

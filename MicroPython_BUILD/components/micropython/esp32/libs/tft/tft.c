@@ -50,10 +50,10 @@
 #include "esp_heap_caps.h"
 #include "tftspi.h"
 
-
-
 #if CONFIG_MICROPY_HW_BOARD == 3
-#include "ft6336.h"
+#include "libs/core2_sys_i2c/core2_i2c.h"
+#include "libs/core2_sys_i2c/ft6336.h"
+#include "esp_log.h"
 #else
 
     #if CONFIG_MICROPY_USE_EVE
@@ -113,12 +113,12 @@ const color_t TFT_PINK        = { 252, 192, 202 };
 // ==============================================================
 // ==== Set default values of global variables ==================
 
-uint8_t tft_active_mode = TFT_MODE_TFT;
-uint8_t orientation = LANDSCAPE;// screen orientation
-uint16_t font_rotate = 0;		// font rotation
+uint8_t tft_active_mode  = TFT_MODE_TFT;
+uint8_t orientation      = LANDSCAPE;   // screen orientation
+uint16_t font_rotate     = 0;		    // font rotation
 uint8_t	font_transparent = 0;
-uint8_t	font_forceFixed = 0;
-uint8_t	text_wrap = 0;			// character wrapping to new line
+uint8_t	font_forceFixed  = 0;
+uint8_t	text_wrap        = 0;			// character wrapping to new line
 color_t	_fg = {  0, 255,   0};
 color_t _bg = {  0,   0,   0};
 uint8_t image_debug = 0;
@@ -3099,6 +3099,7 @@ exit:
 // ============= Touch panel functions =========================================
 
 //-------------------------------------------------------
+#if ( CONFIG_MICROPY_HW_BOARD != 3)
 static int tp_get_data_xpt2046(uint8_t type, int samples)
 {
 	if (ts_spi->handle == NULL) return 0;
@@ -3183,25 +3184,64 @@ exit:
 	spi_device_deselect(ts_spi);
 	return res;
 }
+#endif
 
 //=============================================
 int TFT_read_touch(int *x, int* y, uint8_t raw)
 {
     *x = 0;
     *y = 0;
+#if ( CONFIG_MICROPY_HW_BOARD == 3 )
+    if (! is_core2_sys_i2c_init()){ 
+		ESP_LOGW("[TS]", "No I2C for touch screen device inited");
+		return 0;
+	}
+#else
 	if (ts_spi->handle == NULL) return 0;
+#endif
+
     if (tft_touch_type == TOUCH_TYPE_NONE) return 0;
     int result = -1;
     int X=0, Y=0;
 
-#if CONFIG_MICROPY_HW_BOARD==3
+#if ( CONFIG_MICROPY_HW_BOARD == 3 )
 	//M5Stack Core2 touchscreen
-	if(tft_touch_type == TOUCH_TYPE_FT6336){
-		uint16_t Xx, Yy, Z=0;
-        result = ft6336_get_touch(&Xx, &Yy, &Z);
-		if (result == 0) return 0;
-		X = Xx;
-		Y = Yy;
+	uint16_t Xx, Yy, Z=0;
+    result = ft6336_get_touch(&Xx, &Yy, &Z);
+	if (result == 0) return 0;
+	X = Xx;
+	Y = Yy;
+	if (raw) {
+        *x = X;
+        *y = Y;
+        return 1;
+    } else {
+        int width = _width;
+        int height = _height;
+		int tmp;
+
+		if (X < 0) X = 0;
+		if (X > width-1) X = width-1;
+		
+		if (Y < 0) Y = 0;
+		if (Y > height-1) Y = height-1;
+
+		switch (orientation) {
+			case PORTRAIT_FLIP:
+				X = width - X - 1;
+				Y = height - Y - 1;
+				break;
+			case LANDSCAPE:
+				tmp = X;
+				X = Y;
+				Y = width - tmp -1;
+				break;
+			case LANDSCAPE_FLIP:
+				tmp = X;
+				X = height - Y -1;
+				Y = tmp;
+				break;
+		}
 	}
 #else
     if (tft_touch_type == TOUCH_TYPE_XPT2046) {
@@ -3224,11 +3264,11 @@ int TFT_read_touch(int *x, int* y, uint8_t raw)
 		if (result == 0) return 0;
 		X = Xx;
 		Y = Yy;
-    }
-#endif
-    else return 0;
+    } else {
+	    return 0;
+	}
 
-    if (raw) {
+	if (raw) {
     	*x = X;
     	*y = Y;
     	return 1;
@@ -3303,8 +3343,11 @@ int TFT_read_touch(int *x, int* y, uint8_t raw)
 				break;
 		}
     }
+
 	*x = X;
 	*y = Y;
+
+#endif
 	return 1;
 }
 

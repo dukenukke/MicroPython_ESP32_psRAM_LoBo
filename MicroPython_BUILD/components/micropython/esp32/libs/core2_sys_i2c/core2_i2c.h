@@ -16,6 +16,7 @@ typedef struct {
 } CORE2_SYS_I2C;
 
 esp_err_t core2_sys_i2c_init(void);
+bool is_core2_sys_i2c_init(void);
 int32_t core2_sys_i2c_write(uint8_t slave_addr, uint8_t memaddr, uint8_t *data, uint16_t len, bool stop);
 int32_t core2_sys_i2c_read(uint8_t slave_addr, uint8_t memread, uint32_t memaddr, uint8_t *data, uint16_t len, bool stop);
 #endif

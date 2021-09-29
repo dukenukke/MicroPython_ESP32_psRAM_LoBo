@@ -28,5 +28,6 @@ typedef struct {
 } FT6336;
 
 int32_t ft6336_init(void);
-int32_t ft6336_get_touch(uint16_t x, uint16_t y, uint16_t z);
+bool ft6336_read(void);
+int16_t ft6336_get_touch(uint16_t *x, uint16_t *y, uint16_t *z);
 #endif
